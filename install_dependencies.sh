@@ -17,11 +17,16 @@ apt-get update
 
 # Installer les paquets système nécessaires
 echo "Installation des paquets système..."
-apt-get install -y qemu-utils python3 python3-pip python3-dev
+apt-get install -y qemu-utils python3 python3-pip python3-dev python3-venv
 
-# Installer les dépendances Python
-echo "Installation des dépendances Python..."
-pip3 install yara-python tqdm plotly pandas kaitaistruct
+# Créer un environnement virtuel Python
+echo "Création d'un environnement virtuel Python..."
+VENV_DIR="./venv"
+python3 -m venv $VENV_DIR
+
+# Installer les dépendances Python dans l'environnement virtuel
+echo "Installation des dépendances Python dans l'environnement virtuel..."
+$VENV_DIR/bin/pip install yara-python tqdm plotly pandas kaitaistruct matplotlib
 
 # Créer les répertoires nécessaires
 echo "Création des répertoires..."
@@ -36,5 +41,15 @@ fi
 # Rendre le script d'analyse exécutable
 chmod +x vmdk_scanner.py
 
+# Créer un script wrapper pour faciliter l'exécution avec l'environnement virtuel
+cat > vmdk_scanner_wrapper.sh << 'EOF'
+#!/bin/bash
+# Wrapper pour exécuter vmdk_scanner.py avec l'environnement virtuel
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+$DIR/venv/bin/python3 $DIR/vmdk_scanner.py "$@"
+EOF
+
+chmod +x vmdk_scanner_wrapper.sh
+
 echo "Installation terminée avec succès."
-echo "Utilisation: sudo python3 vmdk_scanner.py -f chemin/vers/fichier.vmdk"
+echo "Utilisation: sudo ./vmdk_scanner_wrapper.sh -f chemin/vers/fichier.vmdk"
