@@ -246,15 +246,13 @@ def main():
     Point d'entrée principal du script.
     """
     parser = argparse.ArgumentParser(description="VMDK Scanner Tool - Analyse forensique de fichiers VMDK")
-    parser.add_argument('vmdk_file', help="Chemin vers le fichier VMDK à analyser")
+    parser.add_argument('vmdk_file', nargs='?', help="Chemin vers le fichier VMDK à analyser")
+    parser.add_argument('-f', '--file', help="Chemin vers le fichier VMDK à analyser")
     parser.add_argument('-c', '--config', help="Chemin vers le fichier de configuration", default=None)
     parser.add_argument('-o', '--output', 
                         help="Répertoire de sortie pour le rapport", 
                         default='output',
                         type=str)
-    parser.add_argument('-f', '--file', 
-                        help="Chemin vers le fichier VMDK à analyser (alias de l'argument positionnel)",
-                        dest='vmdk_file_opt')
     parser.add_argument('--format', 
                         help="Format du rapport de sortie", 
                         choices=['html', 'json', 'txt'], 
@@ -262,8 +260,8 @@ def main():
     
     args = parser.parse_args()
     
-    # Gestion de l'option -f comme alias de l'argument positionnel
-    vmdk_file = args.vmdk_file_opt or args.vmdk_file
+    # Gestion de l'argument de fichier VMDK
+    vmdk_file = args.file or args.vmdk_file
     
     if not vmdk_file:
         parser.error("Vous devez spécifier un fichier VMDK à analyser.")
