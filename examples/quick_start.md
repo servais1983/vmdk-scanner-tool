@@ -18,8 +18,8 @@ sudo ./install_dependencies.sh
 Voici un exemple simple pour analyser un fichier VMDK :
 
 ```bash
-# Analyser un disque VMDK
-sudo python3 vmdk_scanner.py -f /chemin/vers/disque.vmdk -o ./resultats
+# Analyser un disque VMDK avec le script wrapper
+sudo ./vmdk_scanner_wrapper.sh -f /chemin/vers/disque.vmdk -o ./resultats
 ```
 
 Une fois l'analyse terminée, vous trouverez un rapport HTML détaillé dans le dossier `./resultats`.
@@ -31,7 +31,7 @@ Une fois l'analyse terminée, vous trouverez un rapport HTML détaillé dans le 
 Si vous enquêtez sur un système potentiellement compromis :
 
 ```bash
-sudo python3 vmdk_scanner.py -f /chemin/vers/disque.vmdk --reduce-false-positives -v
+sudo ./vmdk_scanner_wrapper.sh -f /chemin/vers/disque.vmdk --reduce-false-positives -v
 ```
 
 L'option `--reduce-false-positives` aide à minimiser les faux positifs dans les résultats.
@@ -41,7 +41,7 @@ L'option `--reduce-false-positives` aide à minimiser les faux positifs dans les
 Si le VMDK est déjà monté (ou si vous voulez pointer vers un système de fichiers) :
 
 ```bash
-sudo python3 vmdk_scanner.py --no-mount --mount-path /mnt/point_de_montage
+sudo ./vmdk_scanner_wrapper.sh --no-mount --mount-path /mnt/point_de_montage
 ```
 
 ### 3. Analyse rapide d'un répertoire spécifique
@@ -49,7 +49,7 @@ sudo python3 vmdk_scanner.py --no-mount --mount-path /mnt/point_de_montage
 Pour une analyse ciblée de certaines parties du système :
 
 ```bash
-sudo python3 vmdk_scanner.py -f /chemin/vers/disque.vmdk --priority-only
+sudo ./vmdk_scanner_wrapper.sh -f /chemin/vers/disque.vmdk --priority-only
 ```
 
 L'option `--priority-only` se concentre uniquement sur les répertoires prioritaires définis dans `config.json`.
@@ -59,7 +59,7 @@ L'option `--priority-only` se concentre uniquement sur les répertoires priorita
 Pour une analyse complète avec des paramètres personnalisés :
 
 ```bash
-sudo python3 vmdk_scanner.py -f /chemin/vers/disque.vmdk -t 8 --custom-rules ./mes_regles_yara -o ./resultats_detailles
+sudo ./vmdk_scanner_wrapper.sh -f /chemin/vers/disque.vmdk -t 8 --custom-rules ./mes_regles_yara -o ./resultats_detailles
 ```
 
 ## Interprétation des résultats
@@ -85,14 +85,14 @@ Le rapport HTML généré contient plusieurs sections importantes :
 
 1. Exécuter une analyse initiale :
    ```bash
-   sudo python3 vmdk_scanner.py -f /chemin/vers/disque.vmdk -o ./resultats_initiaux
+   sudo ./vmdk_scanner_wrapper.sh -f /chemin/vers/disque.vmdk -o ./resultats_initiaux
    ```
 
 2. Examiner les résultats et identifier les zones d'intérêt
 
 3. Effectuer une analyse approfondie ciblant ces zones :
    ```bash
-   sudo python3 vmdk_scanner.py -f /chemin/vers/disque.vmdk -o ./resultats_approfondis --focus-areas "Windows/System32,Users/Administrator" -t 8
+   sudo ./vmdk_scanner_wrapper.sh -f /chemin/vers/disque.vmdk -o ./resultats_approfondis --focus-areas "Windows/System32,Users/Administrator" -t 8
    ```
 
 4. Utiliser les rapports pour guider une investigation plus approfondie avec d'autres outils forensiques si nécessaire
@@ -108,12 +108,20 @@ Si vous rencontrez des problèmes :
 
 - **Erreurs de permission** : Assurez-vous d'exécuter l'outil avec sudo
   ```bash
-  sudo python3 vmdk_scanner.py ...
+  sudo ./vmdk_scanner_wrapper.sh ...
+  ```
+
+- **Problèmes avec l'environnement virtuel** : Réinstallez les dépendances
+  ```bash
+  # Recréer l'environnement virtuel
+  rm -rf ./venv
+  python3 -m venv venv
+  ./venv/bin/pip install yara-python tqdm plotly pandas kaitaistruct matplotlib
   ```
 
 - **Performances lentes** : Augmentez le nombre de threads
   ```bash
-  sudo python3 vmdk_scanner.py -f /chemin/vers/disque.vmdk -t 12
+  sudo ./vmdk_scanner_wrapper.sh -f /chemin/vers/disque.vmdk -t 12
   ```
 
 ## Ressources supplémentaires
