@@ -17,7 +17,7 @@ apt-get update
 
 # Installer les paquets système nécessaires
 echo "Installation des paquets système..."
-apt-get install -y qemu-utils python3 python3-pip python3-dev python3-venv libmagic1
+apt-get install -y qemu-utils python3 python3-pip python3-dev python3-venv libmagic1 libpython3-dev
 
 # Créer un environnement virtuel Python
 echo "Création d'un environnement virtuel Python..."
@@ -26,6 +26,12 @@ python3 -m venv $VENV_DIR
 
 # Installer les dépendances Python dans l'environnement virtuel
 echo "Installation des dépendances Python dans l'environnement virtuel..."
+$VENV_DIR/bin/pip install --upgrade pip
+
+# Installer python-magic de manière sécurisée
+$VENV_DIR/bin/pip install python-magic
+
+# Installer les autres dépendances
 $VENV_DIR/bin/pip install \
     yara-python \
     tqdm \
@@ -33,14 +39,11 @@ $VENV_DIR/bin/pip install \
     pandas \
     kaitaistruct \
     matplotlib \
-    python-magic \
-    python-magic-bin \
-    argparse \
-    typing
+    urllib3
 
 # Créer les répertoires nécessaires
 echo "Création des répertoires..."
-mkdir -p rules signatures output
+mkdir -p rules signatures output logs
 
 # Vérifier si le module NBD est chargé
 if ! lsmod | grep -q "^nbd "; then
@@ -62,4 +65,5 @@ EOF
 chmod +x vmdk_scanner_wrapper.sh
 
 echo "Installation terminée avec succès."
-echo "Utilisation: sudo ./vmdk_scanner_wrapper.sh -f chemin/vers/fichier.vmdk"
+echo "Utilisez './vmdk_scanner_wrapper.sh' pour lancer l'outil"
+echo "Ou activez l'environnement virtuel avec : source venv/bin/activate"
