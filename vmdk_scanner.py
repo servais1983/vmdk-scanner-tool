@@ -15,17 +15,19 @@ import sys
 import yara
 import magic
 import hashlib
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 # Configuration de la journalisation
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    filename='vmdk_scan.log',
+    filemode='w'
 )
 logger = logging.getLogger(__name__)
 
 class VMDKScanner:
-    def __init__(self, config_path: str = None):
+    def __init__(self, config_path: Optional[str] = None):
         """
         Initialise le scanner VMDK avec une configuration optionnelle.
         
@@ -34,7 +36,7 @@ class VMDKScanner:
         self.config = self.load_config(config_path)
         self.yara_rules = self.load_yara_rules()
     
-    def load_config(self, config_path: str = None) -> Dict[str, Any]:
+    def load_config(self, config_path: Optional[str] = None) -> Dict[str, Any]:
         """
         Charge la configuration du scanner.
         
@@ -42,7 +44,7 @@ class VMDKScanner:
         :return: Dictionnaire de configuration
         """
         default_config = {
-            'yara_rules_path': './yara_rules/',
+            'yara_rules_path': './rules/',
             'network_analysis': True,
             'log_directory': './logs',
             'report_format': 'html'
@@ -56,7 +58,7 @@ class VMDKScanner:
         :return: Dictionnaire de règles YARA compilées
         """
         rules_dict = {}
-        rules_path = self.config.get('yara_rules_path', './yara_rules/')
+        rules_path = self.config.get('yara_rules_path', './rules/')
         
         try:
             for filename in os.listdir(rules_path):
@@ -136,63 +138,108 @@ class VMDKScanner:
         :return: Résultats de l'analyse réseau
         """
         # TODO: Implémenter l'analyse réseau
-        # Cette méthode pourrait extraire des configurations réseau, 
-        # des adresses IP, des connexions, etc.
         return {
             'status': 'non implémenté',
             'note': 'Fonctionnalité à développer'
         }
     
-    def generate_report(self, scan_results: Dict[str, Any], output_format: str = None) -> str:
+    def generate_report(self, scan_results: Dict[str, Any], output_dir: str, output_format: str = 'html') -> str:
         """
         Génère un rapport à partir des résultats de scan.
         
         :param scan_results: Résultats de l'analyse
-        :param output_format: Format de sortie du rapport (html, json, txt)
+        :param output_dir: Répertoire de sortie pour le rapport
+        :param output_format: Format de sortie du rapport
         :return: Chemin vers le fichier de rapport généré
         """
-        output_format = output_format or self.config.get('report_format', 'html')
+        # Créer le répertoire de sortie si nécessaire
+        os.makedirs(output_dir, exist_ok=True)
         
-        # TODO: Implémenter la génération de rapport dans différents formats
-        # Actuellement, génère un rapport basique en texte
-        report_content = self.generate_text_report(scan_results)
+        # Nom de base du fichier de rapport
+        base_filename = f"vmdk_scan_report_{os.path.basename(scan_results['file_path'])}"
         
-        # Créer le répertoire de logs si nécessaire
-        log_dir = self.config.get('log_directory', './logs')
-        os.makedirs(log_dir, exist_ok=True)
-        
-        report_path = os.path.join(log_dir, f"vmdk_scan_report_{os.path.basename(scan_results['file_path'])}.txt")
-        
-        with open(report_path, 'w') as report_file:
-            report_file.write(report_content)
+        if output_format == 'html':
+            report_path = os.path.join(output_dir, f"{base_filename}.html")
+            self.generate_html_report(scan_results, report_path)
+        elif output_format == 'json':
+            report_path = os.path.join(output_dir, f"{base_filename}.json")
+            self.generate_json_report(scan_results, report_path)
+        elif output_format == 'txt':
+            report_path = os.path.join(output_dir, f"{base_filename}.txt")
+            self.generate_text_report(scan_results, report_path)
+        else:
+            raise ValueError(f"Format de rapport non supporté : {output_format}")
         
         return report_path
     
-    def generate_text_report(self, scan_results: Dict[str, Any]) -> str:
+    def generate_html_report(self, scan_results: Dict[str, Any], report_path: str):
         """
-        Génère un rapport au format texte.
+        Génère un rapport HTML.
         
         :param scan_results: Résultats de l'analyse
-        :return: Contenu du rapport en texte
+        :param report_path: Chemin de sortie du fichier HTML
         """
-        report = f"Rapport d'analyse VMDK\n"
-        report += f"==================\n\n"
-        report += f"Fichier analysé: {scan_results['file_path']}\n"
-        report += f"Hash SHA-256: {scan_results['file_hash']}\n"
-        report += f"Type de fichier: {scan_results['file_type']}\n\n"
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Rapport d'analyse VMDK</title>
+        </head>
+        <body>
+            <h1>Rapport d'analyse VMDK</h1>
+            <h2>Détails du fichier</h2>
+            <p>Chemin : {scan_results['file_path']}</p>
+            <p>Type : {scan_results['file_type']}</p>
+            <p>Hash SHA-256 : {scan_results['file_hash']}</p>
+            
+            <h2>Résultats YARA</h2>
+            {'<p>Aucune correspondance YARA trouvée.</p>' if not scan_results['yara_matches'] else ''}
+            <ul>
+                {''.join([f'<li>{rule}: {matches}</li>' for rule, matches in scan_results['yara_matches'].items()])}
+            </ul>
+        </body>
+        </html>
+        """
         
-        if scan_results['yara_matches']:
-            report += "Correspondances YARA:\n"
-            for rule_file, matches in scan_results['yara_matches'].items():
-                report += f"  - Règles de {rule_file}: {', '.join(matches)}\n"
-        else:
-            report += "Aucune correspondance YARA trouvée.\n"
+        with open(report_path, 'w') as f:
+            f.write(html_content)
+    
+    def generate_json_report(self, scan_results: Dict[str, Any], report_path: str):
+        """
+        Génère un rapport JSON.
         
-        if scan_results['network_analysis']:
-            report += "\nAnalyse réseau:\n"
-            report += str(scan_results['network_analysis'])
+        :param scan_results: Résultats de l'analyse
+        :param report_path: Chemin de sortie du fichier JSON
+        """
+        import json
+        with open(report_path, 'w') as f:
+            json.dump(scan_results, f, indent=4)
+    
+    def generate_text_report(self, scan_results: Dict[str, Any], report_path: str):
+        """
+        Génère un rapport texte.
         
-        return report
+        :param scan_results: Résultats de l'analyse
+        :param report_path: Chemin de sortie du fichier texte
+        """
+        report_content = f"""
+Rapport d'analyse VMDK
+=====================
+
+Détails du fichier
+-----------------
+Chemin : {scan_results['file_path']}
+Type : {scan_results['file_type']}
+Hash SHA-256 : {scan_results['file_hash']}
+
+Résultats YARA
+--------------
+{'Aucune correspondance YARA trouvée.' if not scan_results['yara_matches'] else ''}
+{chr(10).join([f"{rule}: {matches}" for rule, matches in scan_results['yara_matches'].items()])}
+"""
+        
+        with open(report_path, 'w') as f:
+            f.write(report_content)
 
 def main():
     """
@@ -201,18 +248,36 @@ def main():
     parser = argparse.ArgumentParser(description="VMDK Scanner Tool - Analyse forensique de fichiers VMDK")
     parser.add_argument('vmdk_file', help="Chemin vers le fichier VMDK à analyser")
     parser.add_argument('-c', '--config', help="Chemin vers le fichier de configuration", default=None)
-    parser.add_argument('-o', '--output', help="Format de sortie du rapport", choices=['html', 'json', 'txt'], default=None)
+    parser.add_argument('-o', '--output', 
+                        help="Répertoire de sortie pour le rapport", 
+                        default='output',
+                        type=str)
+    parser.add_argument('-f', '--file', 
+                        help="Chemin vers le fichier VMDK à analyser (alias de l'argument positionnel)",
+                        dest='vmdk_file_opt')
+    parser.add_argument('--format', 
+                        help="Format du rapport de sortie", 
+                        choices=['html', 'json', 'txt'], 
+                        default='html')
     
     args = parser.parse_args()
     
+    # Gestion de l'option -f comme alias de l'argument positionnel
+    vmdk_file = args.vmdk_file_opt or args.vmdk_file
+    
+    if not vmdk_file:
+        parser.error("Vous devez spécifier un fichier VMDK à analyser.")
+    
     try:
         scanner = VMDKScanner(args.config)
-        scan_results = scanner.scan_vmdk_file(args.vmdk_file)
-        report_path = scanner.generate_report(scan_results, args.output)
+        scan_results = scanner.scan_vmdk_file(vmdk_file)
+        report_path = scanner.generate_report(scan_results, args.output, args.format)
         
         logger.info(f"Analyse terminée. Rapport généré : {report_path}")
+        print(f"Analyse terminée. Rapport généré : {report_path}")
     except Exception as e:
         logger.error(f"Erreur lors de l'analyse : {e}")
+        print(f"Erreur lors de l'analyse : {e}")
         sys.exit(1)
 
 if __name__ == "__main__":
