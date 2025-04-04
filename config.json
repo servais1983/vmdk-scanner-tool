@@ -1,0 +1,63 @@
+{
+    "scan_options": {
+        "default_threads": 4,
+        "default_output_dir": "./output",
+        "reduce_false_positives": true,
+        "scan_timeout": 3600,
+        "hash_algorithms": ["md5", "sha1", "sha256"],
+        "verbose_logging": false
+    },
+    "detection_thresholds": {
+        "critical_score": 80,
+        "high_score": 60,
+        "medium_score": 40,
+        "low_score": 20
+    },
+    "category_weights": {
+        "malware_detections": 5.0,
+        "privilege_escalation": 4.0,
+        "suspicious_activities": 3.0,
+        "suspicious_files": 2.5,
+        "threats": 5.0,
+        "encryption_findings": 1.0,
+        "network_artifacts": 2.0
+    },
+    "severity_weights": {
+        "critical": 10.0,
+        "high": 7.0,
+        "medium": 4.0,
+        "low": 1.0,
+        "info": 0.5
+    },
+    "scanning_depth": {
+        "max_file_size_mb": 50,
+        "max_files_per_directory": 1000,
+        "max_recursion_depth": 10,
+        "skip_file_types": [".jpg", ".png", ".gif", ".bmp", ".mp3", ".mp4", ".avi", ".mkv", ".iso"],
+        "priority_directories": [
+            "/Windows/System32",
+            "/Windows/SysWOW64",
+            "/Program Files",
+            "/Program Files (x86)",
+            "/Users",
+            "/etc",
+            "/var/log",
+            "/home",
+            "/root",
+            "/Library/LaunchAgents",
+            "/Library/LaunchDaemons"
+        ]
+    },
+    "yara_options": {
+        "rules_directory": "./rules",
+        "timeout": 60,
+        "max_strings_per_rule": 10000
+    },
+    "report_options": {
+        "report_format": "html",
+        "generate_json": true,
+        "include_charts": true,
+        "include_recommendations": true,
+        "max_findings_per_category": 100
+    }
+}
