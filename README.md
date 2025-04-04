@@ -37,6 +37,8 @@ sudo chmod +x install_dependencies.sh
 sudo ./install_dependencies.sh
 ```
 
+L'installation crée un environnement virtuel Python et installe toutes les dépendances nécessaires dans cet environnement.
+
 ### Installation manuelle
 
 Si vous préférez installer manuellement les dépendances :
@@ -44,10 +46,13 @@ Si vous préférez installer manuellement les dépendances :
 ```bash
 # Installer les dépendances système
 sudo apt-get update
-sudo apt-get install -y qemu-utils python3 python3-pip python3-dev
+sudo apt-get install -y qemu-utils python3 python3-pip python3-dev python3-venv
 
-# Installer les dépendances Python
-pip3 install yara-python tqdm plotly pandas kaitaistruct matplotlib
+# Créer un environnement virtuel
+python3 -m venv venv
+
+# Installer les dépendances Python dans l'environnement virtuel
+./venv/bin/pip install yara-python tqdm plotly pandas kaitaistruct matplotlib
 
 # Charger le module NBD si nécessaire
 sudo modprobe nbd
@@ -58,7 +63,11 @@ sudo modprobe nbd
 ### Commande de base
 
 ```bash
-sudo python3 vmdk_scanner.py -f chemin/vers/fichier.vmdk -o dossier/sortie
+# Utiliser le script wrapper qui active automatiquement l'environnement virtuel
+sudo ./vmdk_scanner_wrapper.sh -f chemin/vers/fichier.vmdk -o dossier/sortie
+
+# Ou directement avec l'environnement virtuel
+sudo ./venv/bin/python3 vmdk_scanner.py -f chemin/vers/fichier.vmdk -o dossier/sortie
 ```
 
 ### Options
@@ -83,22 +92,22 @@ Options:
 
 #### Analyse standard
 ```bash
-sudo python3 vmdk_scanner.py -f /chemin/vers/disque.vmdk
+sudo ./vmdk_scanner_wrapper.sh -f /chemin/vers/disque.vmdk
 ```
 
 #### Analyse avec réduction des faux positifs
 ```bash
-sudo python3 vmdk_scanner.py -f /chemin/vers/disque.vmdk --reduce-false-positives
+sudo ./vmdk_scanner_wrapper.sh -f /chemin/vers/disque.vmdk --reduce-false-positives
 ```
 
 #### Analyse multithreadée
 ```bash
-sudo python3 vmdk_scanner.py -f /chemin/vers/disque.vmdk -t 8
+sudo ./vmdk_scanner_wrapper.sh -f /chemin/vers/disque.vmdk -t 8
 ```
 
 #### Analyse d'un VMDK déjà monté
 ```bash
-sudo python3 vmdk_scanner.py --no-mount --mount-path /mnt/vmdk
+sudo ./vmdk_scanner_wrapper.sh --no-mount --mount-path /mnt/vmdk
 ```
 
 ## Structure du rapport
@@ -137,6 +146,27 @@ rule Custom_Malware_Detection {
         any of them
 }
 ```
+
+## Dépannage
+
+Si vous rencontrez des problèmes lors de l'installation ou de l'exécution :
+
+1. **Erreur de module NBD** : Assurez-vous que le module kernel NBD est chargé
+   ```bash
+   sudo modprobe nbd
+   ```
+
+2. **Erreurs de permission** : L'outil nécessite des privilèges root pour monter les disques VMDK
+   ```bash
+   sudo ./vmdk_scanner_wrapper.sh ...
+   ```
+
+3. **Problèmes avec Python** : Vérifiez que l'environnement virtuel est correctement créé
+   ```bash
+   # Recréer l'environnement virtuel si nécessaire
+   python3 -m venv --clear venv
+   ./venv/bin/pip install yara-python tqdm plotly pandas kaitaistruct matplotlib
+   ```
 
 ## Contribution
 
